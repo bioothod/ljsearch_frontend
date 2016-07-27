@@ -14,6 +14,17 @@ var ErrorMessage = React.createClass({
 });
 
 var Content = React.createClass({
+  getInitialState: function() {
+    return {
+      clicked: true,
+    };
+  },
+
+  onClick: function(e) {
+    e.preventDefault();
+    this.setState({clicked: true});
+  },
+
   highlight: function(arr) {
     var ret = [];
     var current = [];
@@ -36,21 +47,58 @@ var Content = React.createClass({
     return ret;
   },
   render: function() {
-    var rendered_content = null;
-    var rendered_title = null;
-    if (this.props.content.content.length > 0) {
-      rendered_content = <div>Content: {this.highlight(this.props.content.content)}</div>
+    if (this.state.clicked) {
+      var rendered_content = null;
+      var rendered_title = null;
+      if (this.props.content.content.length > 0) {
+        rendered_content = <div>Content: {this.highlight(this.props.content.content)}</div>
+      }
+      if (this.props.content.title.length > 0) {
+        rendered_title = <div>Title: {this.highlight(this.props.content.title)}</div>
+      }
+      return (
+        <div className="content">
+          {rendered_content}
+          {rendered_title}
+        </div>
+      );
     }
-    if (this.props.content.title.length > 0) {
-      rendered_title = <div>Title: {this.highlight(this.props.content.title)}</div>
-    }
-    return (
-      <div className="content">
-        {rendered_content}
-        {rendered_title}
-      </div>
-    );
+
+    return <a href="#" onClick={this.onClick}>[content]</a>
   },
+});
+
+var Links = React.createClass({
+  getInitialState: function() {
+    return {
+      clicked: false,
+    };
+  },
+
+  onClick: function(e) {
+    e.preventDefault();
+    this.setState({clicked: true});
+  },
+
+  render: function() {
+    if (this.props.obj.content.links.length == 0 && this.props.obj.content.images.length == 0)
+      return null;
+
+    if (this.state.clicked) {
+      var la = [];
+      this.props.obj.content.links.forEach(function(l, idx) {
+        la.push(<li key={"link" + idx}><a href={l} target="_blank">{l}</a></li>);
+      });
+
+      this.props.obj.content.images.forEach(function(l, idx) {
+        la.push(<li key={"img" + idx}><a href={l} target="_blank"><div><img src={l} /></div><div>{l}</div></a></li>);
+      });
+
+      return <ul>Links: {la}</ul>
+    }
+
+    return <a href="#" onClick={this.onClick}>[links]</a>
+  }
 });
 
 var SearchElement = React.createClass({
@@ -62,9 +110,11 @@ var SearchElement = React.createClass({
     var title = obj.title;
     if (!title || title == "")
       title = url;
+
     return (
       <div className="searchElement">
         <p>Date: {date.toString()}, Author: <a href={author_url} target="_blank">{obj.author}</a>, Url: <a href={url} target="_blank">{title}</a></p>
+        <Links obj={obj} />
         <Content content={obj.content} />
       </div>
     );
