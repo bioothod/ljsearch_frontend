@@ -129,15 +129,20 @@ var SearchResults = React.createClass({
     var comments = [];
     var posts = [];
 
+    var want_comments = false;
+    var want_posts = false;
+
     for (var i in this.props.results) {
       var res = this.props.results[i];
 
       var mbox = null;
       if (res.mailbox == "post") {
         mbox = posts;
+        want_posts = true;
       }
       if (res.mailbox == "comment") {
         mbox = comments;
+        want_comments = true;
       }
 
       if (!mbox)
@@ -151,7 +156,7 @@ var SearchResults = React.createClass({
     }
 
     var comment_results = null;
-    if (comments.length !== 0) {
+    if (want_comments) {
       comment_results = 
         <div className="searchComments">
           <p>Found {comments.length} in comments:</p>
@@ -160,7 +165,7 @@ var SearchResults = React.createClass({
     }
     
     var post_results = null;
-    if (posts.length !== 0) {
+    if (want_posts) {
       post_results = 
         <div className="searchPosts">
           <p>Found {posts.length} in posts:</p>
