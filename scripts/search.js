@@ -1,3 +1,32 @@
+var Info = React.createClass({
+  render: function() {
+    if (!this.props.active)
+      return null;
+
+    return (
+      <div>
+        <p>Implementation details:</p>
+        <ul>
+          <li>Search is performed over stemmed content, spell checking is not yet supported, but indexed content includes both stemmed and original versions of the posts and comments.</li>
+          <li>Search only supports AND operator, i.e. documents returned are guaranteed to contain all search query elements. Exact match is not yet supported.</li>
+          <li>Link searching form can include both url format like [www.gazeta.ru] or just [jpg], returned documents match both text query and have required link elements in 'a' or 'img' tags.</li>
+          <li>Author search limits results to given author only, but please note that original database does not always have author field for content.</li>
+          <li>There are no exceptions for stop words like [to be or not to be] or short terms like [i], everything is indexed and being quickly searched.</li>
+          <li>Very small disk footprint, this test content is about 200Mb uncompressed (200k livejournal posts and comments), it takes about 450Mb on disk, including original content and general and per-author indexes.</li>
+        </ul>
+        <p>TODO list:</p>
+        <ul>
+          <li>Exact phrase search</li>
+          <li>Spell checking and error correction</li>
+          <li>Negation support</li>
+          <li>Date/Time search support</li>
+          <li>Pagination support, please note that plain [Путин] request will send about 5Mb of data to client</li>
+        </ul>
+      </div>
+    );
+  }
+});
+
 window.SearchForm = React.createClass({
   getInitialState: function() {
     return {
@@ -6,6 +35,7 @@ window.SearchForm = React.createClass({
       links: '',
       post: true,
       comment: true,
+      info_active: true,
     }
   },
 
@@ -26,6 +56,8 @@ window.SearchForm = React.createClass({
   },
 
   handleSubmit: function(e) {
+    this.setState({info_active: false});
+
     e.preventDefault();
     var query = this.state.query.trim();
     var author = this.state.author.trim();
@@ -44,14 +76,17 @@ window.SearchForm = React.createClass({
   },
   render: function() {
     return (
-      <form className="searchForm" onSubmit={this.handleSubmit}>
-        <div className="query">Search query: <input type="text" placeholder="Путин" value={this.state.query} onChange={this.handleQueryChange}/></div>
-        <div className="author">Search for embedded links containing given elements: <input type="text" placeholder="www.gazeta.ru" value={this.state.links} onChange={this.handleLinksChange}/></div>
-        <div className="author">Search only for this author: <input type="text" placeholder="xxx.livejournal.com" value={this.state.author} onChange={this.handleAuthorChange}/></div>
-        <div className="checkbox"><input type="checkbox" defaultChecked={true} onChange={this.handlePostCheckboxChange} />Search in posts</div>
-        <div className="checkbox"><input type="checkbox" defaultChecked={true} onChange={this.handleCommentCheckboxChange} />Search in comments</div>
-        <input type="submit" value="Post" />
-      </form>
+      <div className="searchWrapper">
+        <form className="searchForm" onSubmit={this.handleSubmit}>
+          <div className="query">Search query: <input type="text" placeholder="Путин" value={this.state.query} onChange={this.handleQueryChange}/></div>
+          <div className="author">Search for embedded links containing given elements: <input type="text" placeholder="www.gazeta.ru" value={this.state.links} onChange={this.handleLinksChange}/></div>
+          <div className="author">Search only for this author: <input type="text" placeholder="xxx.livejournal.com" value={this.state.author} onChange={this.handleAuthorChange}/></div>
+          <div className="checkbox"><input type="checkbox" defaultChecked={true} onChange={this.handlePostCheckboxChange} />Search in posts</div>
+          <div className="checkbox"><input type="checkbox" defaultChecked={true} onChange={this.handleCommentCheckboxChange} />Search in comments</div>
+          <input type="submit" value="Post" />
+        </form>
+        <Info active={this.state.info_active} />
+      </div>
     );
   }
 });
