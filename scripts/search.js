@@ -1,4 +1,17 @@
 var Info = React.createClass({
+  onLinkClick: function(e) {
+    e.preventDefault();
+    this.props.onLinkClick(e.target.text);
+  },
+  onQueryClick: function(e) {
+    e.preventDefault();
+    this.props.onQueryClick(e.target.text);
+  },
+  onAuthorClick: function(e) {
+    e.preventDefault();
+    this.props.onAuthorClick(e.target.text);
+  },
+
   render: function() {
     if (!this.props.active)
       return null;
@@ -9,9 +22,9 @@ var Info = React.createClass({
         <ul>
           <li>Search is performed over stemmed content, spell checking is not yet supported, but indexed content includes both stemmed and original versions of the posts and comments.</li>
           <li>Search only supports AND operator, i.e. documents returned are guaranteed to contain all search query elements. Exact match is not yet supported.</li>
-          <li>Link searching form can include both url format like [www.gazeta.ru] or just [jpg], returned documents match both text query and have required link elements in 'a' or 'img' tags.</li>
-          <li>Author search limits results to given author only, but please note that original database does not always have author field for content.</li>
-          <li>There are no exceptions for stop words like [to be or not to be] or short terms like [i], everything is indexed and being quickly searched.</li>
+          <li>Link searching form can include both url format like [<a href="" onClick={this.onLinkClick}>www.gazeta.ru</a>] or just [<a href="" onClick={this.onLinkClick}>jpg</a>], returned documents match both text query and have required link elements in 'a' or 'img' tags.</li>
+          <li>Author search like [<a href="" onClick={this.onAuthorClick}>drugoi.livejournal.com</a>] limits results to given author only, but please note that original database does not always have author field for content. If author is not specified, search is being performed against the whole database.</li>
+          <li>There are no exceptions for stop words like [<a href="" onClick={this.onQueryClick}>to be or not to be</a>] or short terms like [<a href="" onClick={this.onQueryClick}>i</a>], everything is indexed and being quickly searched.</li>
           <li>Very small disk footprint, this test content is about 200Mb uncompressed (200k livejournal posts and comments), it takes about 450Mb on disk, including original content and general and per-author indexes.</li>
         </ul>
         <p>TODO list:</p>
@@ -55,6 +68,16 @@ window.SearchForm = React.createClass({
     this.setState({comment: e.target.checked});
   },
 
+  onLinkClick: function(text) {
+    this.setState({links: text});
+  },
+  onQueryClick: function(text) {
+    this.setState({query: text});
+  },
+  onAuthorClick: function(text) {
+    this.setState({author: text});
+  },
+
   handleSubmit: function(e) {
     this.setState({info_active: false});
 
@@ -85,7 +108,7 @@ window.SearchForm = React.createClass({
           <div className="checkbox"><input type="checkbox" defaultChecked={true} onChange={this.handleCommentCheckboxChange} />Search in comments</div>
           <input type="submit" value="Post" />
         </form>
-        <Info active={this.state.info_active} />
+        <Info active={this.state.info_active} onLinkClick={this.onLinkClick} onAuthorClick={this.onAuthorClick} onQueryClick={this.onQueryClick}/>
       </div>
     );
   }
