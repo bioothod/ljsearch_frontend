@@ -33,7 +33,7 @@ var Info = React.createClass({
           <li>Spell checking and error correction</li>
           <li>Negation support</li>
           <li>Date/Time search support</li>
-          <li>Pagination support, please note that plain [Путин] request will send about 5Mb of data to client</li>
+          <li>Pagination support, please note that plain [<a href="" onClick={this.onQueryClick}>Путин</a>] request will send about 5Mb of data to client</li>
         </ul>
       </div>
     );
@@ -49,6 +49,7 @@ window.SearchForm = React.createClass({
       post: true,
       comment: true,
       info_active: true,
+      next_id: 0,
     }
   },
 
@@ -110,86 +111,6 @@ window.SearchForm = React.createClass({
         </form>
         <Info active={this.state.info_active} onLinkClick={this.onLinkClick} onAuthorClick={this.onAuthorClick} onQueryClick={this.onQueryClick}/>
       </div>
-    );
-  }
-});
-
-window.Search = React.createClass({
-  push_attr: function(attribute, author, text, links) {
-    var query = {};
-
-    if (text && text != "") {
-      if (author && author != "") {
-        query[author + "." + attribute] = text;
-      } else {
-        query[attribute] = text;
-      }
-    }
-
-    if (links && links != "") {
-      if (author && author != "") {
-        query[author + "." + "urls"] = links;
-      } else {
-        query["urls"] = links;
-      }
-    }
-
-    return query;
-  },
-
-  query: function(mbox, attribute, author, text, links) {
-    var query = {};
-    query.mailbox = mbox;
-    query.query = this.push_attr(attribute, author, text, links);
-
-    $.ajax({
-      url: this.props.search_url,
-      dataType: 'json',
-      type: 'POST',
-      data: JSON.stringify(query),
-      success: function(data) {
-        data.attribute = attribute;
-        data.author = author;
-        data.links = links;
-        data.query = text.split(" ");
-
-        this.props.onResult(data);
-      }.bind(this),
-      error: function(xhr, status, err) {
-        console.log("jquery error: xhr: %o", xhr);
-        var status = xhr.status;
-        if (xhr.status === 0) {
-          status = -22;
-        }
-      }.bind(this)
-    });
-  },
-  query_mbox: function(mbox, attributes, author, text, links) {
-    for (var i in attributes) {
-      this.query(mbox, attributes[i], author, text, links);
-    }
-  },
-  onSubmit: function(q) {
-    if (!q.post && !q.comment)
-      return;
-
-    this.props.onInit();
-
-    var post_attrs = ["fixed_title", "fixed_content"];
-    var comment_attrs = ["fixed_content"];
-
-    if (q.post) {
-      this.query_mbox("post", post_attrs, q.author, q.query, q.links);
-    }
-
-    if (q.comment) {
-      this.query_mbox("comment", comment_attrs, q.author, q.query, q.links);
-    }
-  },
-
-  render: function() {
-    return (
-      <SearchForm onSubmit={this.onSubmit} />
     );
   }
 });

@@ -121,62 +121,126 @@ var SearchElement = React.createClass({
   }
 });
 
-var SearchResults = React.createClass({
+var LoadMore = React.createClass({
+  onClick: function(e) {
+    e.preventDefault();
+    this.props.onLoadMore();
+  },
   render: function() {
-    if (!this.props.results)
+    return (
+      <div className="loadMore">
+        <a href="#" onClick={this.onClick}>{this.props.text}...</a>
+      </div>
+    );
+  },
+});
+
+var SearchResult = React.createClass({
+  render: function() {
+    if (!this.props.result.ids)
       return null;
 
-    var comments = [];
-    var posts = [];
+    var results = this.props.result.ids.map(function(obj, idx) {
+      return <SearchElement obj={obj} key={idx} />
+    });
 
-    var want_comments = false;
-    var want_posts = false;
-
-    for (var i in this.props.results) {
-      var res = this.props.results[i];
-
-      var mbox = null;
-      if (res.mailbox == "post") {
-        mbox = posts;
-        want_posts = true;
-      }
-      if (res.mailbox == "comment") {
-        mbox = comments;
-        want_comments = true;
-      }
-
-      if (!mbox)
-        continue;
-
-      for (var j in res.ids) {
-        var obj = res.ids[j];
-        var elm = <SearchElement obj={obj} key={res.mailbox + res.attribute + obj.id + obj.timestamp.tsec} />
-        mbox.push(elm);
-      }
-    }
-
-    var comment_results = null;
-    if (want_comments) {
-      comment_results = 
-        <div className="searchComments">
-          <p>Found {comments.length} in comments:</p>
-          {comments}
+    if (!this.props.result.completed) {
+      return (
+        <div className="searchResults">
+          <p>Found {results.length} (load more below) in {this.props.result.mailbox}s (search query attribute: {this.props.result.description.join(" ")}):</p>
+          {results}
+          <LoadMore text="Load more" onLoadMore={this.props.onLoadMore} />
         </div>
-    }
-    
-    var post_results = null;
-    if (want_posts) {
-      post_results = 
-        <div className="searchPosts">
-          <p>Found {posts.length} in posts:</p>
-          {posts}
+      );
+    } else {
+      return (
+        <div className="searchResults">
+          <p>Search completed, these are the last results in {this.props.result.mailbox}s (search query attribute: {this.props.result.description.join(" ")}):</p>
+          {results}
+          <LoadMore text="Start over" onLoadMore={this.props.onStartOver} />
         </div>
+      );
     }
+  },
+});
 
+var SearchRequest = React.createClass({
+  getInitialState: function() {
+    return {
+      message: '',
+      next_id: 0,
+      completed: false,
+      search_result: {},
+    };
+  },
+
+  onResult: function(result) {
+    console.log("onResult: %o", result);
+    this.setState({
+      next_id: result.next_document_id,
+      completed: result.completed,
+      search_result: result,
+    });
+  },
+
+  onLoadMore: function() {
+    this.query();
+  },
+
+  onStartOver: function() {
+    console.log("start over");
+    this.setState({
+      next_id: 0,
+      completed: false,
+    });
+
+    this.query();
+  },
+
+  query: function(complete) {
+    var query = this.props.query;
+
+    var p = {};
+    p.next_document_id = this.state.next_id;
+    p.max_number = 10;
+    query.paging = p;
+
+    console.log("query: %o", query);
+
+    $.ajax({
+      url: this.props.search_url,
+      dataType: 'json',
+      type: 'POST',
+      data: JSON.stringify(query),
+      success: function(res) {
+        res.description = [];
+        for (var key in query.query) {
+          if (query.query.hasOwnProperty(key)) {
+            res.description.push(key);
+          }
+        }
+
+        this.onResult(res);
+      }.bind(this),
+      error: function(xhr, status, err) {
+        console.log("jquery error: xhr: %o", xhr);
+        var status = xhr.status;
+        if (xhr.status === 0) {
+          status = -22;
+        }
+      }.bind(this)
+    });
+  },
+
+  componentDidMount: function() {
+    this.query();
+  },
+
+  render: function() {
     return (
-      <div className="searchResults">
-        {comment_results}
-        {post_results}
+      <div className="searchRequest">
+        <ErrorMessage message={this.state.message} />
+        <SearchResult result={this.state.search_result} onLoadMore={this.onLoadMore} onStartOver={this.onStartOver} />
       </div>
     );
   },
@@ -185,29 +249,77 @@ var SearchResults = React.createClass({
 var MainCtl = React.createClass({
   getInitialState: function() {
     return {
-      message: '',
-      search_results: [],
+      requests: [],
     };
   },
 
-  onInit: function() {
-    this.setState(this.getInitialState());
+  push_attr: function(attribute, author, text, links) {
+    var query = {};
+
+    if (text && text != "") {
+      if (author && author != "") {
+        query[author + "." + attribute] = text;
+      } else {
+        query[attribute] = text;
+      }
+    }
+
+    if (links && links != "") {
+      if (author && author != "") {
+        query[author + "." + "urls"] = links;
+      } else {
+        query["urls"] = links;
+      }
+    }
+
+    return query;
   },
 
-  onResult: function(result) {
-    var res = this.state.search_results;
-    var nres = res.concat([result]);
-    this.setState({
-      search_results: nres,
-    });
+  query_mbox: function(mbox, attributes, author, text, links) {
+    var queries = [];
+    for (var i in attributes) {
+      var attr = attributes[i];
+      var q = {};
+
+      q.mailbox = mbox;
+      q.query = this.push_attr(attr, author, text, links);
+
+      queries.push(q);
+    }
+
+    return queries;
+  },
+  onSubmit: function(q) {
+    if (!q.post && !q.comment)
+      return;
+
+    var requests = [];
+
+    var post_attrs = ["fixed_title", "fixed_content"];
+    var comment_attrs = ["fixed_content"];
+
+    if (q.post) {
+      requests = requests.concat(this.query_mbox("post", post_attrs, q.author, q.query, q.links));
+    }
+
+    if (q.comment) {
+      requests = requests.concat(this.query_mbox("comment", comment_attrs, q.author, q.query, q.links));
+    }
+
+    this.setState({requests: requests});
   },
 
   render: function() {
+    var requests = this.state.requests.map(function(req, idx) {
+      return (
+        <SearchRequest key={idx} query={req} search_url={this.props.search_url} />
+      );
+    }, this);
+
     return (
       <div>
-        <Search onInit={this.onInit} onResult={this.onResult} search_url={this.props.search_url} />
-        <ErrorMessage message={this.state.message} />
-        <SearchResults results={this.state.search_results} />
+        <SearchForm onSubmit={this.onSubmit} />
+        {requests}
       </div>
     );
   }
