@@ -26,6 +26,7 @@ var Info = React.createClass({
           <li>Author search like [<a href="" onClick={this.onAuthorClick}>drugoi.livejournal.com</a>] limits results to given author only, but please note that original database does not always have author field for content. If author is not specified, search is being performed against the whole database.</li>
           <li>There are no exceptions for stop words like [<a href="" onClick={this.onQueryClick}>to be or not to be</a>] or short terms like [<a href="" onClick={this.onQueryClick}>i</a>], everything is indexed and being quickly searched.</li>
           <li>Very small disk footprint, this test content is about 200Mb uncompressed (200k livejournal posts and comments), it takes about 450Mb on disk, including original content and general and per-author indexes.</li>
+          <li>Per request type pagination support, there are 3 request types: post content and title and comment content. Pagination allows to read next set of search results for particular type without reloading others.</li>
         </ul>
         <p>TODO list:</p>
         <ul>
@@ -33,7 +34,6 @@ var Info = React.createClass({
           <li>Spell checking and error correction</li>
           <li>Negation support</li>
           <li>Date/Time search support</li>
-          <li>Pagination support, please note that plain [<a href="" onClick={this.onQueryClick}>Путин</a>] request will send about 5Mb of data to client</li>
         </ul>
       </div>
     );
