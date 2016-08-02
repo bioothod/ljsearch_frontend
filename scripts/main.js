@@ -175,7 +175,6 @@ var SearchRequest = React.createClass({
   },
 
   onResult: function(result) {
-    console.log("onResult: %o", result);
     this.setState({
       next_id: result.next_document_id,
       completed: result.completed,
@@ -184,28 +183,23 @@ var SearchRequest = React.createClass({
   },
 
   onLoadMore: function() {
-    this.query();
+    this.query(this.props.query, this.state.next_id);
   },
 
   onStartOver: function() {
-    console.log("start over");
     this.setState({
       next_id: 0,
       completed: false,
     });
 
-    this.query();
+    this.query(this.props.query, 0);
   },
 
-  query: function(complete) {
-    var query = this.props.query;
-
+  query: function(query, next_id) {
     var p = {};
-    p.next_document_id = this.state.next_id;
+    p.next_document_id = next_id;
     p.max_number = 10;
     query.paging = p;
-
-    console.log("query: %o", query);
 
     $.ajax({
       url: this.props.search_url,
@@ -233,7 +227,13 @@ var SearchRequest = React.createClass({
   },
 
   componentDidMount: function() {
-    this.query();
+    this.query(this.props.query, 0);
+  },
+
+  componentWillUpdate: function(nextProps, nextState) {
+    if (this.props.query != nextProps.query) {
+      this.query(nextProps.query, 0);
+    }
   },
 
   render: function() {
@@ -289,6 +289,7 @@ var MainCtl = React.createClass({
 
     return queries;
   },
+
   onSubmit: function(q) {
     if (!q.post && !q.comment)
       return;
