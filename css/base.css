@@ -26,6 +26,32 @@ code {
   padding: 0 5px;
 }
 
+.searchWrapper {
+  width: 80%;
+}
+
+.queryLine {
+  padding: 2px;
+  width: 100%;
+
+}
+
+input#submit {
+  float: right;
+}
+
+.query {
+  overflow: hidden;
+}
+
+.query input {
+  width: 100%;
+}
+
+.checkbox {
+  text-align: right;
+}
+
 .searchElement {
   padding-bottom: 1em;
 }
