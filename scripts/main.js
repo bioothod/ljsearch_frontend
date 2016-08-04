@@ -253,36 +253,87 @@ var MainCtl = React.createClass({
     };
   },
 
-  push_attr: function(attribute, author, text, links) {
-    var query = {};
+  parse_query: function(text) {
+    var state = {
+      query: [],
+      links: [],
+      exact: [],
+      negation: [],
+    };
 
-    if (text && text != "") {
-      if (author && author != "") {
-        query[author + "." + attribute] = text;
-      } else {
-        query[attribute] = text;
+    state.exact = text.match(/"(.*?)"/g);
+    if (!state.exact)
+      state.exact = [];
+
+    text = text.replace(/"/g, "");
+    var words = text.split(" ");
+
+    var push = function(word, prefix, dst) {
+      if (startsWith(word, prefix)) {
+        dst.push(word.substring(prefix.length));
+        return true;
       }
-    }
 
-    if (links && links != "") {
-      if (author && author != "") {
-        query[author + "." + "urls"] = links;
-      } else {
-        query["urls"] = links;
-      }
-    }
+      return false;
+    };
 
-    return query;
+    state.query = words.filter(function(word) {
+      if (word.length < 1)
+        return false;
+      if (push(word, "-", state.negation))
+        return false;
+      if (push(word, "link:", state.links))
+        return false;
+
+      return true;
+    });
+
+    state.exact = state.exact.map(function(token) {
+      return token.replace(/"/g,"");
+    });
+
+    return state;
   },
 
-  query_mbox: function(mbox, attributes, author, text, links) {
+  query_for_attribute: function(attr, qs) {
+    var ret = {};
+    var q = {};
+    var n = {};
+    var e = {};
+
+    e[attr] = qs.exact.join(" ");
+    n[attr] = qs.negation.join(" ");
+    q[attr] = qs.query.join(" ");
+    if (qs.links.length > 0) {
+      q["urls"] = qs.links.join(" ");
+    }
+
+    ret.query = q;
+    ret.negation = n;
+    ret.exact = e;
+    return ret;
+  },
+
+  push_attr: function(attribute, text) {
+    var qs = this.parse_query(text);
+
+    return this.query_for_attribute(attribute, qs);
+  },
+
+  query_mbox: function(mbox, attributes, text) {
     var queries = [];
+    var author_match = text.match(/ author:(\S+)/g);
+    if (author_match) {
+      text = text.replace(author_match[0], "");
+      var author = author_match[0].split(":")[1];
+      mbox = author + "." + mbox;
+    }
+
     for (var i in attributes) {
       var attr = attributes[i];
-      var q = {};
+      var q = this.push_attr(attr, text);
 
       q.mailbox = mbox;
-      q.query = this.push_attr(attr, author, text, links);
 
       queries.push(q);
     }
@@ -294,17 +345,23 @@ var MainCtl = React.createClass({
     if (!q.post && !q.comment)
       return;
 
+    if (false)
+    {
+      var requests = this.query_mbox("post", ["fixed_title"], q.query);
+      this.setState({requests: requests});
+      return;
+    }
     var requests = [];
 
     var post_attrs = ["fixed_title", "fixed_content"];
     var comment_attrs = ["fixed_content"];
 
     if (q.post) {
-      requests = requests.concat(this.query_mbox("post", post_attrs, q.author, q.query, q.links));
+      requests = requests.concat(this.query_mbox("post", post_attrs, q.query));
     }
 
     if (q.comment) {
-      requests = requests.concat(this.query_mbox("comment", comment_attrs, q.author, q.query, q.links));
+      requests = requests.concat(this.query_mbox("comment", comment_attrs, q.query));
     }
 
     this.setState({requests: requests});
