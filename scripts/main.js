@@ -113,7 +113,7 @@ var SearchElement = React.createClass({
 
     return (
       <div className="searchElement">
-        <p>Date: {date.toString()}, Author: <a href={author_url} target="_blank">{obj.author}</a>, Url: <a href={url} target="_blank">{title}</a></p>
+        <p>Date: {date.toString()}, Author: <a href={author_url} target="_blank">{obj.author}</a>, Url: <a href={url} target="_blank">{title}</a>, Id: {obj.indexed_id}</p>
         <Links obj={obj} />
         <Content content={obj.content} />
       </div>
