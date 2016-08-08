@@ -168,7 +168,7 @@ var SearchRequest = React.createClass({
   getInitialState: function() {
     return {
       message: '',
-      next_id: 0,
+      next_id: '0.0',
       completed: false,
       search_result: {},
     };
@@ -188,7 +188,7 @@ var SearchRequest = React.createClass({
 
   onStartOver: function() {
     this.setState({
-      next_id: 0,
+      next_id: '0.0',
       completed: false,
     });
 
@@ -227,12 +227,12 @@ var SearchRequest = React.createClass({
   },
 
   componentDidMount: function() {
-    this.query(this.props.query, 0);
+    this.query(this.props.query, this.state.next_id);
   },
 
   componentWillUpdate: function(nextProps, nextState) {
     if (this.props.query != nextProps.query) {
-      this.query(nextProps.query, 0);
+      this.query(nextProps.query, '0.0');
     }
   },
 
@@ -320,13 +320,16 @@ var MainCtl = React.createClass({
     return this.query_for_attribute(attribute, qs);
   },
 
-  query_mbox: function(mbox, attributes, text) {
+  query_mbox: function(mbox, attributes, orig_query) {
     var queries = [];
-    var author_match = text.match(/ author:(\S+)/g);
+    var author_match = orig_query.query.match(/ author:(\S+)/g);
+    var text = null;
     if (author_match) {
-      text = text.replace(author_match[0], "");
+      text = orig_query.query.replace(author_match[0], "");
       var author = author_match[0].split(":")[1];
       mbox = author + "." + mbox;
+    } else {
+      text = orig_query.query;
     }
 
     for (var i in attributes) {
@@ -334,6 +337,12 @@ var MainCtl = React.createClass({
       var q = this.push_attr(attr, text);
 
       q.mailbox = mbox;
+
+      var time = {};
+      time.start = orig_query.start_time;
+      time.end = orig_query.end_time;
+
+      q.time = time;
 
       queries.push(q);
     }
@@ -347,7 +356,7 @@ var MainCtl = React.createClass({
 
     if (false)
     {
-      var requests = this.query_mbox("post", ["fixed_title"], q.query);
+      var requests = this.query_mbox("post", ["fixed_title"], q);
       this.setState({requests: requests});
       return;
     }
@@ -357,11 +366,11 @@ var MainCtl = React.createClass({
     var comment_attrs = ["fixed_content"];
 
     if (q.post) {
-      requests = requests.concat(this.query_mbox("post", post_attrs, q.query));
+      requests = requests.concat(this.query_mbox("post", post_attrs, q));
     }
 
     if (q.comment) {
-      requests = requests.concat(this.query_mbox("comment", comment_attrs, q.query));
+      requests = requests.concat(this.query_mbox("comment", comment_attrs, q));
     }
 
     this.setState({requests: requests});

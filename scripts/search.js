@@ -35,6 +35,8 @@ var Info = React.createClass({
 window.SearchForm = React.createClass({
   getInitialState: function() {
     return {
+      start_time: Date.parse("2001-01-01"),
+      end_time: Date.now(),
       query: '',
       post: true,
       comment: true,
@@ -56,6 +58,19 @@ window.SearchForm = React.createClass({
     this.setState({query: text});
   },
 
+  onStartDateChange: function(e) {
+    var v = Date.parse(e.target.value);
+    if (v) {
+      this.setState({start_time: v});
+    }
+  },
+  onEndDateChange: function(e) {
+    var v = Date.parse(e.target.value);
+    if (v) {
+      this.setState({end_time: v});
+    }
+  },
+
   handleSubmit: function(e) {
     e.preventDefault();
     var query = this.state.query.trim();
@@ -67,6 +82,8 @@ window.SearchForm = React.createClass({
       query: query,
       post: this.state.post,
       comment: this.state.comment,
+      start_time: this.state.start_time / 1000,
+      end_time: this.state.end_time / 1000 + 24*3600,
       info_active: false,
     });
   },
@@ -78,6 +95,7 @@ window.SearchForm = React.createClass({
           <input id="submit" type="submit" value="Post" />
           <div className="query"><input type="text" placeholder="Livejournal archive search..." value={this.state.query} onChange={this.handleQueryChange}/></div>
           </div>
+          <div className="date">Limit search to this time range: <input type="text" name="start_date" defaultValue={this.state.start_time.toString("yyyy-MM-dd")} onChange={this.onStartDateChange}/> - <input type="text" name="end_data" defaultValue={this.state.end_time.toString("yyyy-MM-dd")} onChange={this.onEndDateChange}/></div>
           <div className="checkbox"><input type="checkbox" defaultChecked={true} onChange={this.handlePostCheckboxChange} />Search in posts</div>
           <div className="checkbox"><input type="checkbox" defaultChecked={true} onChange={this.handleCommentCheckboxChange} />Search in comments</div>
         </form>

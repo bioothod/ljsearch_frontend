@@ -48,6 +48,10 @@ input#submit {
   width: 100%;
 }
 
+.date {
+  text-align: right;
+}
+
 .checkbox {
   text-align: right;
 }
