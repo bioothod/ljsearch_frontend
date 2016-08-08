@@ -21,11 +21,11 @@ var Info = React.createClass({
           <li>Per request type pagination support, there are 3 request types: post content and title and comment content. Pagination allows to read next set of search results for particular type without reloading others.</li>
           <li>Exact phrase search - use double quotes [<a href="" onClick={this.onQueryClick}>"поездка Путина"</a>] to find out exact match, please note that stemming is not used in exact match, i.e. ["testing"] is not equal to ["test"] which would yield the same results if used without quotes.</li>
           <li>Negation support - use 'minus' symbol [<a href="" onClick={this.onQueryClick}>-rafale</a>] to exclude documents which contain given word.</li>
+          <li>Date/Time search support, returned documents are sorted in ascending order, there are input controls to specify start/end time range for documents.</li>
         </ul>
         <p>TODO list:</p>
         <ul>
           <li>Spell checking and error correction</li>
-          <li>Date/Time search support</li>
         </ul>
       </div>
     );
