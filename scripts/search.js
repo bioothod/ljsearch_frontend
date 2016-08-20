@@ -13,7 +13,7 @@ var Info = React.createClass({
         <p>Implementation details:</p>
         <ul>
           <li>Search is performed over stemmed content, spell checking is not yet supported, but indexed content includes both stemmed and original versions of the posts and comments.</li>
-          <li>Search only supports AND operator, i.e. documents returned are guaranteed to contain all search query elements. Exact match is not yet supported.</li>
+          <li>Search only supports AND operator, i.e. documents returned are guaranteed to contain all search query elements.</li>
           <li>Link searching can include both url format like [<a href="" onClick={this.onQueryClick}>link:www.gazeta.ru</a>] or just [<a href="" onClick={this.onQueryClick}>link:jpg</a>], returned documents match both text query and have required link elements in 'a' or 'img' tags.</li>
           <li>Author search like [<a href="" onClick={this.onQueryClick}>author:drugoi.livejournal.com</a>] limits results to given author only, but please note that original database does not always have author field for content. If author is not specified, search is being performed against the whole database.</li>
           <li>There are no exceptions for stop words like [<a href="" onClick={this.onQueryClick}>to be or not to be</a>] or short terms like [<a href="" onClick={this.onQueryClick}>i</a>], everything is indexed and being quickly searched.</li>
@@ -21,7 +21,7 @@ var Info = React.createClass({
           <li>Per request type pagination support, there are 3 request types: post content and title and comment content. Pagination allows to read next set of search results for particular type without reloading others.</li>
           <li>Exact phrase search - use double quotes [<a href="" onClick={this.onQueryClick}>"поездка Путина"</a>] to find out exact match, please note that stemming is not used in exact match, i.e. ["testing"] is not equal to ["test"] which would yield the same results if used without quotes.</li>
           <li>Negation support - use 'minus' symbol [<a href="" onClick={this.onQueryClick}>-rafale</a>] to exclude documents which contain given word.</li>
-          <li>Date/Time search support, returned documents are sorted in ascending order, there are input controls to specify start/end time range for documents.</li>
+          <li>Date/Time search support, returned documents are sorted in ascending order, there are input controls to specify start/end time range for documents, format is YYYY-MM-DD.</li>
         </ul>
         <p>TODO list:</p>
         <ul>
@@ -82,8 +82,8 @@ window.SearchForm = React.createClass({
       query: query,
       post: this.state.post,
       comment: this.state.comment,
-      start_time: this.state.start_time / 1000,
-      end_time: this.state.end_time / 1000 + 24*3600,
+      start_time: Math.round(this.state.start_time / 1000),
+      end_time: Math.round(this.state.end_time / 1000 + 24*3600),
       info_active: false,
     });
   },
