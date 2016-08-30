@@ -147,7 +147,7 @@ var SearchResult = React.createClass({
     if (!this.props.result.completed) {
       return (
         <div className="searchResults">
-          <p>Found {results.length} (load more below) in {this.props.result.mailbox}s (search query attribute: {this.props.result.description.join(" ")}):</p>
+          <p>Found {results.length} (load more below) in {this.props.result.mbox_type}s (search query attribute: {this.props.result.description}):</p>
           {results}
           <LoadMore text="Load more" onLoadMore={this.props.onLoadMore} />
         </div>
@@ -155,7 +155,7 @@ var SearchResult = React.createClass({
     } else {
       return (
         <div className="searchResults">
-          <p>Search completed, these are the last results in {this.props.result.mailbox}s (search query attribute: {this.props.result.description.join(" ")}):</p>
+          <p>Search completed, these are the last results in {this.props.result.mbox_type}s (search query attribute: {this.props.result.description}):</p>
           {results}
           <LoadMore text="Start over" onLoadMore={this.props.onStartOver} />
         </div>
@@ -187,12 +187,14 @@ var SearchRequest = React.createClass({
   },
 
   onStartOver: function() {
+    var next_id = '0.0';
+
     this.setState({
-      next_id: '0.0',
+      next_id: next_id,
       completed: false,
     });
 
-    this.query(this.props.query, 0);
+    this.query(this.props.query, next_id);
   },
 
   query: function(query, next_id) {
@@ -207,12 +209,8 @@ var SearchRequest = React.createClass({
       type: 'POST',
       data: JSON.stringify(query),
       success: function(res) {
-        res.description = [];
-        for (var key in query.query) {
-          if (query.query.hasOwnProperty(key)) {
-            res.description.push(key);
-          }
-        }
+        res.description = query.description;
+        res.mbox_type = query.mbox_type;
 
         this.onResult(res);
       }.bind(this),
@@ -314,40 +312,72 @@ var MainCtl = React.createClass({
     return ret;
   },
 
-  push_attr: function(attribute, text) {
-    var qs = this.parse_query(text);
+  query_mbox: function(mbox_type, attributes, orig_query) {
+    var author_match = orig_query.query.match(/\Wauthor:(\S+)/g);
+    var journal_match = orig_query.query.match(/\Wjournal:(\S+)/g);
+    var author = null;
+    var journal = null;
+    var text = orig_query.query;
+    var mboxes = [];
 
-    return this.query_for_attribute(attribute, qs);
-  },
-
-  query_mbox: function(mbox, attributes, orig_query) {
-    var queries = [];
-    var author_match = orig_query.query.match(/ author:(\S+)/g);
-    var text = null;
     if (author_match) {
-      text = orig_query.query.replace(author_match[0], "");
-      var author = author_match[0].split(":")[1];
-      mbox = author + "." + mbox;
-    } else {
-      text = orig_query.query;
+      text = text.replace(author_match[0], "");
+      author = author_match[0].split(":")[1];
     }
+    if (journal_match) {
+      text = text.replace(journal_match[0], "");
+      journal = journal_match[0].split(":")[1];
+    }
+
+    if (author || journal) {
+      if (mbox_type == "post") {
+        if (author) {
+          mboxes.push("journal." + author + "." + mbox_type);
+        } else if (journal) {
+          mboxes.push("journal." + journal + "." + mbox_type);
+        }
+      } else {
+        if (author) {
+          mboxes.push("author." + author + "." + mbox_type);
+        }
+
+        if (journal) {
+          mboxes.push("journal." + journal + "." + mbox_type);
+        }
+      }
+    } else {
+      mboxes.push(mbox_type);
+    }
+
+    var time = {};
+    time.start = orig_query.start_time;
+    time.end = orig_query.end_time;
+
+    var qtext = this.parse_query(text);
+
+    var requests = [];
 
     for (var i in attributes) {
       var attr = attributes[i];
-      var q = this.push_attr(attr, text);
+      var q = this.query_for_attribute(attr, qtext);;
 
-      q.mailbox = mbox;
+      var jsq = {};
 
-      var time = {};
-      time.start = orig_query.start_time;
-      time.end = orig_query.end_time;
+      jsq.time = time;
+      jsq.request = {}
 
-      q.time = time;
+      for (var j in mboxes) {
+        var mbox = mboxes[j];
 
-      queries.push(q);
+        jsq.request[mbox] = q;
+        jsq.mbox_type = mbox_type;
+        jsq.description = attr;
+      }
+
+      requests.push(jsq);
     }
 
-    return queries;
+    return requests;
   },
 
   onSubmit: function(q) {
