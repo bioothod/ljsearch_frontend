@@ -25,36 +25,15 @@ var Content = React.createClass({
     this.setState({clicked: true});
   },
 
-  highlight: function(arr) {
-    var ret = [];
-    var current = [];
-    arr.forEach(function(t, i) {
-      if (startsWith(t, "<high>") && endsWith(t, "</high>")) {
-        ret.push(current.join(" "));
-        current = [];
-
-        var w = t.substring(6, t.length - 7);
-        ret.push(<b key={i}> {w} </b>);
-      } else {
-        current.push(t);
-      }
-    });
-
-    if (current.length > 0) {
-      ret.push(current.join(" "));
-    }
-
-    return ret;
-  },
   render: function() {
     if (this.state.clicked) {
       var rendered_content = null;
       var rendered_title = null;
       if (this.props.content.content.length > 0) {
-        rendered_content = <div>Content: {this.highlight(this.props.content.content)}</div>
+        rendered_content = <div>Content: {this.props.content.content}</div>
       }
       if (this.props.content.title.length > 0) {
-        rendered_title = <div>Title: {this.highlight(this.props.content.title)}</div>
+        rendered_title = <div>Title: {this.props.content.title}</div>
       }
       return (
         <div className="content">
@@ -168,7 +147,7 @@ var SearchRequest = React.createClass({
   getInitialState: function() {
     return {
       message: '',
-      next_id: '0.0',
+      next_id: '0',
       completed: false,
       search_result: {},
     };
@@ -187,7 +166,7 @@ var SearchRequest = React.createClass({
   },
 
   onStartOver: function() {
-    var next_id = '0.0';
+    var next_id = '0';
 
     this.setState({
       next_id: next_id,
@@ -230,7 +209,7 @@ var SearchRequest = React.createClass({
 
   componentWillUpdate: function(nextProps, nextState) {
     if (this.props.query != nextProps.query) {
-      this.query(nextProps.query, '0.0');
+      this.query(nextProps.query, '0');
     }
   },
 
